@@ -300,7 +300,7 @@ interface MarketChartProps {
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
     return (
-      <div className="bg-slate-900/95 border border-slate-700 p-3 rounded shadow-2xl backdrop-blur text-sm">
+      <div className="bg-slate-900/95 border border-slate-700 p-3 rounded shadow-2xl backdrop-blur text-sm z-50">
         <p className="text-slate-400 mb-2 font-mono text-xs pb-1 border-b border-slate-800">{label}</p>
         {payload.map((entry: any) => (
           <div key={entry.name} className="flex items-center gap-3 mb-1 justify-between min-w-[140px]">
@@ -367,7 +367,7 @@ const MarketChart: React.FC<MarketChartProps> = ({
   return (
     <div className="w-full bg-slate-800/50 rounded-xl border border-slate-700 p-4 sm:p-6 shadow-xl backdrop-blur-sm">
       {renderControls()}
-      <div className="h-[400px] w-full">
+      <div className="h-[500px] w-full">
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart data={data} margin={{ top: 10, right: 10, left: 10, bottom: 0 }}>
             <defs>
@@ -403,71 +403,84 @@ const MarketChart: React.FC<MarketChartProps> = ({
 
 // --- InfoPanel ---
 interface InfoPanelProps {
-  highLow: HighLowData[];
+  highLowBtc: HighLowData[];
+  highLowGold: HighLowData[];
   funding: FundingRate[];
+  chartMode: ChartMode;
 }
 
-const InfoPanel: React.FC<InfoPanelProps> = ({ highLow, funding }) => {
-  return (
-    <div className="space-y-4">
-      <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-4">
-        <div className="flex items-center gap-2 mb-4 text-slate-300">
-          <Activity size={18} className="text-[#4ecdc4]" />
-          <h3 className="font-semibold text-sm uppercase tracking-wider">BTC Volatility</h3>
+const VolatilityCard: React.FC<{ title: string, data: HighLowData[], color: string }> = ({ title, data, color }) => (
+  <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-4">
+    <div className="flex items-center gap-2 mb-4 text-slate-300">
+      <Activity size={18} style={{ color: color }} />
+      <h3 className="font-semibold text-sm uppercase tracking-wider">{title}</h3>
+    </div>
+    <div className="space-y-3">
+      <div className="grid grid-cols-4 text-xs text-slate-500 pb-2 border-b border-slate-700/50 font-medium">
+        <div>Time</div><div className="text-right">High</div><div className="text-right">Low</div><div className="text-right">Range</div>
+      </div>
+      {data.map((item, idx) => (
+        <div key={idx} className="grid grid-cols-4 text-sm items-center hover:bg-slate-700/30 p-1 rounded transition-colors">
+          <div className="text-slate-400 font-medium">{item.timeframe}</div>
+          <div className="text-right font-mono text-green-400/90 text-xs sm:text-sm">${item.high.toLocaleString()}</div>
+          <div className="text-right font-mono text-red-400/90 text-xs sm:text-sm">${item.low.toLocaleString()}</div>
+          <div className="text-right font-bold text-white text-xs sm:text-sm">{item.rangePercent.toFixed(2)}%</div>
         </div>
-        <div className="space-y-3">
-          <div className="grid grid-cols-4 text-xs text-slate-500 pb-2 border-b border-slate-700/50 font-medium">
-            <div>Time</div><div className="text-right">High</div><div className="text-right">Low</div><div className="text-right">Range</div>
-          </div>
-          {highLow.map((item, idx) => (
-            <div key={idx} className="grid grid-cols-4 text-sm items-center hover:bg-slate-700/30 p-1 rounded transition-colors">
-              <div className="text-slate-400 font-medium">{item.timeframe}</div>
-              <div className="text-right font-mono text-green-400/90 text-xs sm:text-sm">${item.high.toLocaleString()}</div>
-              <div className="text-right font-mono text-red-400/90 text-xs sm:text-sm">${item.low.toLocaleString()}</div>
-              <div className="text-right font-bold text-white text-xs sm:text-sm">{item.rangePercent.toFixed(2)}%</div>
+      ))}
+    </div>
+  </div>
+);
+
+const InfoPanel: React.FC<InfoPanelProps> = ({ highLowBtc, highLowGold, funding, chartMode }) => {
+  const showBtc = chartMode === 'combined' || chartMode === 'btc';
+  const showGold = chartMode === 'combined' || chartMode === 'gold';
+
+  return (
+    <div className="space-y-4 h-full flex flex-col">
+      {/* Volatility Section */}
+      {showBtc && <VolatilityCard title="BTC Volatility" data={highLowBtc} color="#4ecdc4" />}
+      {showGold && <VolatilityCard title="Gold Volatility" data={highLowGold} color="#ffd700" />}
+
+      {/* Funding Rates */}
+      <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-4">
+          <div className="flex items-center gap-2 mb-3 text-slate-300">
+          <Zap size={18} className="text-yellow-400" />
+          <h3 className="font-semibold text-sm uppercase tracking-wider">Funding Rates (Real-time)</h3>
+        </div>
+        <div className="space-y-2">
+          {funding.map((f, i) => (
+            <div key={i} className="flex justify-between items-center bg-slate-900/40 p-2 rounded border border-slate-700/50">
+              <span className="text-sm font-medium text-slate-400">{f.exchange}</span>
+              <span className={`font-mono font-bold ${f.rate > 0.01 ? 'text-red-400' : 'text-green-400'}`}>{(f.rate * 100).toFixed(4)}%</span>
             </div>
           ))}
+          <div className="text-[10px] text-slate-500 mt-2 text-center">Positive: Longs pay Shorts (Bullish sentiment)</div>
         </div>
       </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-4">
-        <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-4">
-           <div className="flex items-center gap-2 mb-3 text-slate-300">
-            <Zap size={18} className="text-yellow-400" />
-            <h3 className="font-semibold text-sm uppercase tracking-wider">Funding Rates (Real-time)</h3>
-          </div>
-          <div className="space-y-2">
-            {funding.map((f, i) => (
-              <div key={i} className="flex justify-between items-center bg-slate-900/40 p-2 rounded border border-slate-700/50">
-                <span className="text-sm font-medium text-slate-400">{f.exchange}</span>
-                <span className={`font-mono font-bold ${f.rate > 0.01 ? 'text-red-400' : 'text-green-400'}`}>{(f.rate * 100).toFixed(4)}%</span>
-              </div>
-            ))}
-            <div className="text-[10px] text-slate-500 mt-2 text-center">Positive: Longs pay Shorts (Bullish sentiment)</div>
-          </div>
+
+      {/* Market Analysis */}
+      <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-4 flex flex-col justify-between flex-grow">
+          <div className="flex items-center gap-2 mb-3 text-slate-300">
+          <AlertTriangle size={18} className="text-orange-400" />
+          <h3 className="font-semibold text-sm uppercase tracking-wider">Market Analysis</h3>
         </div>
-        <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-4 flex flex-col justify-between">
-           <div className="flex items-center gap-2 mb-3 text-slate-300">
-            <AlertTriangle size={18} className="text-orange-400" />
-            <h3 className="font-semibold text-sm uppercase tracking-wider">Market Analysis</h3>
-          </div>
-          <div className="space-y-3 text-sm">
-            <div className="bg-slate-900/40 p-2 rounded">
-              <div className="text-slate-500 text-xs mb-1">CME BTC Gap</div>
-              <div className="flex justify-between">
-                <span className="text-white">$85,500 <span className="text-slate-600">→</span> $86,200</span>
-                <span className="text-xs px-1.5 py-0.5 bg-red-500/20 text-red-400 rounded border border-red-500/30">Unfilled</span>
-              </div>
+        <div className="space-y-3 text-sm">
+          <div className="bg-slate-900/40 p-2 rounded">
+            <div className="text-slate-500 text-xs mb-1">CME BTC Gap</div>
+            <div className="flex justify-between">
+              <span className="text-white">$85,500 <span className="text-slate-600">→</span> $86,200</span>
+              <span className="text-xs px-1.5 py-0.5 bg-red-500/20 text-red-400 rounded border border-red-500/30">Unfilled</span>
             </div>
-             <div className="bg-slate-900/40 p-2 rounded">
-              <div className="text-slate-500 text-xs mb-1">Correlation (30D)</div>
-              <div className="flex justify-between items-center">
-                <span className="text-slate-300">BTC / XAU</span>
-                <span className="font-bold text-[#4ecdc4]">+0.75</span>
-              </div>
-              <div className="flex justify-between items-center mt-1">
-                <span className="text-slate-300">BTC / DXY</span>
-                <span className="font-bold text-red-400">-0.85</span>
-              </div>
+          </div>
+            <div className="bg-slate-900/40 p-2 rounded">
+            <div className="text-slate-500 text-xs mb-1">Correlation (30D)</div>
+            <div className="flex justify-between items-center">
+              <span className="text-slate-300">BTC / XAU</span>
+              <span className="font-bold text-[#4ecdc4]">+0.75</span>
+            </div>
+            <div className="flex justify-between items-center mt-1">
+              <span className="text-slate-300">BTC / DXY</span>
+              <span className="font-bold text-red-400">-0.85</span>
             </div>
           </div>
         </div>
@@ -583,6 +596,7 @@ function App() {
   const [chartData, setChartData] = useState<ChartDataPoint[]>([]);
   const [fundingData, setFundingData] = useState<FundingRate[]>([]);
   const [highLowBtc, setHighLowBtc] = useState<HighLowData[]>([]);
+  const [highLowGold, setHighLowGold] = useState<HighLowData[]>([]);
   const [timeFrame, setTimeFrame] = useState<TimeFrame>(TimeFrame.H1);
   const [chartMode, setChartMode] = useState<ChartMode>('combined');
   const [loading, setLoading] = useState(true);
@@ -604,6 +618,7 @@ function App() {
       setGoldData(gold);
       setFundingData(funding);
       setHighLowBtc(hlBtc);
+      setHighLowGold(hlGold); // Ensure we set Gold volatility data
       setChartData(chart);
       setLastUpdated(new Date().toLocaleTimeString());
     } catch (error) {
@@ -628,9 +643,10 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#1e1e2e] text-[#cdd6f4] p-4 md:p-6 lg:p-8 font-sans selection:bg-[#4ecdc4]/30">
+    <div className="min-h-screen bg-[#1e1e2e] text-[#cdd6f4] p-2 sm:p-4 font-sans selection:bg-[#4ecdc4]/30">
       
-      <div className="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
+      {/* Header - Simplified margins for full width */}
+      <div className="w-full flex flex-col sm:flex-row justify-between items-center mb-4 gap-4 px-2">
         <div className="flex items-center gap-3">
             <div className="bg-[#4ecdc4] text-[#1e1e2e] font-black p-2 rounded text-xl shadow-[0_0_15px_rgba(78,205,196,0.5)]">
                 TV
@@ -660,22 +676,26 @@ function App() {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto space-y-6">
+      <div className="w-full space-y-4 px-2">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <TickerCard symbol="BTC/USDT" name="Bitcoin Spot" price={btcData.price} changePercent={btcData.changePercent} color="teal" />
           <TickerCard symbol="XAU/USD" name="Gold (PAXG Real-time)" price={goldData.price} changePercent={goldData.changePercent} color="gold" />
         </div>
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2 space-y-6">
+        
+        {/* Main Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          <div className="lg:col-span-2 space-y-4">
             <MarketChart data={chartData} isLoading={loading} timeFrame={timeFrame} onTimeFrameChange={handleTimeFrameChange} chartMode={chartMode} onChartModeChange={setChartMode} />
              <AIAnalysisPanel btcPrice={btcData.price} btcChange={btcData.changePercent} goldPrice={goldData.price} goldChange={goldData.changePercent} fundingRate={fundingData[0]?.rate * 100 || 0} volatility={highLowBtc} />
           </div>
-          <div className="lg:col-span-1">
-            <InfoPanel highLow={highLowBtc} funding={fundingData} />
+          <div className="lg:col-span-1 h-full">
+            {/* InfoPanel now handles dynamic height and logic */}
+            <InfoPanel highLowBtc={highLowBtc} highLowGold={highLowGold} funding={fundingData} chartMode={chartMode} />
           </div>
         </div>
-        <div className="text-center text-[10px] text-slate-600 mt-8 pb-4">
-          <p>QUANT ENGINE ALPHA V1.2 | POWERED BY GEMINI 2.5 FLASH</p>
+        
+        <div className="text-center text-[10px] text-slate-600 mt-4 pb-4">
+          <p>QUANT ENGINE ALPHA V1.3 | POWERED BY GEMINI 2.5 FLASH</p>
         </div>
       </div>
     </div>
