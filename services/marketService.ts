@@ -1,5 +1,5 @@
 import { GoogleGenAI } from "@google/genai";
-import { ChartDataPoint, FundingRate, HighLowData, TimeFrame } from '../types';
+import { ChartDataPoint, FundingRate, HighLowData, TimeFrame } from '../types.ts';
 
 // Constants
 const BINANCE_API = 'https://api.binance.com/api/v3';
@@ -58,16 +58,16 @@ export const fetchFundingRates = async (): Promise<FundingRate[]> => {
   ];
 };
 
-export const fetchHighLow = async (): Promise<HighLowData[]> => {
+export const fetchHighLow = async (symbol: string): Promise<HighLowData[]> => {
   const definitions = [
-    { label: '1 Giờ', interval: '1h', limit: 2 }, 
-    { label: '4 Giờ', interval: '4h', limit: 2 },
-    { label: '24 Giờ', interval: '1d', limit: 1 }, 
-    { label: '7 Ngày', interval: '1w', limit: 1 },
+    { label: '1H', interval: '1h', limit: 2 }, 
+    { label: '4H', interval: '4h', limit: 2 },
+    { label: '24H', interval: '1d', limit: 1 }, 
+    { label: '7D', interval: '1w', limit: 1 },
   ];
 
   const results = await Promise.all(definitions.map(async (def) => {
-    const data = await safeFetch(`${BINANCE_API}/klines?symbol=BTCUSDT&interval=${def.interval}&limit=${def.limit}`);
+    const data = await safeFetch(`${BINANCE_API}/klines?symbol=${symbol}&interval=${def.interval}&limit=${def.limit}`);
     
     if (!data || data.length === 0) {
       return {
@@ -158,37 +158,42 @@ export const fetchChartData = async (timeFrame: TimeFrame): Promise<ChartDataPoi
   });
 };
 
-// --- AI ANALYST ---
+export const fetchAIAnalysis = async (marketData: {
+  btcPrice: number;
+  btcChange: number;
+  goldPrice: number;
+  goldChange: number;
+  fundingRate: number;
+}) => {
+  const apiKey = process.env.API_KEY;
+  if (!apiKey) {
+    console.error("API Key not found in environment (process.env.API_KEY).");
+    return "Configuration Error: API Key missing.";
+  }
 
-export const fetchAIAnalysis = async (marketData: any) => {
-  try {
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const ai = new GoogleGenAI({ apiKey });
+
+  const prompt = `
+    VAI TRÒ: Bạn là chuyên gia phân tích thị trường tài chính AI.
     
-    const prompt = `
-      Bạn là một chuyên gia phân tích tài chính cấp cao (Senior Market Analyst).
-      Hãy phân tích dữ liệu thị trường hiện tại dưới đây và đưa ra nhận định ngắn gọn (tối đa 150 từ):
+    DỮ LIỆU THỊ TRƯỜNG:
+    - BTC: $${marketData.btcPrice} (${marketData.btcChange}%)
+    - Gold: $${marketData.goldPrice} (${marketData.goldChange}%)
+    - Funding Rate: ${marketData.fundingRate}%
+    
+    YÊU CẦU:
+    Phân tích ngắn gọn (tối đa 3 câu) về tâm lý thị trường (Bullish/Bearish) dựa trên dữ liệu trên.
+    Đưa ra nhận định về rủi ro.
+  `;
 
-      Dữ liệu hiện tại:
-      - Bitcoin (BTC): $${marketData.btcPrice} (Biến động 24h: ${marketData.btcChange}%)
-      - Vàng (XAU/PAXG): $${marketData.goldPrice} (Biến động 24h: ${marketData.goldChange}%)
-      - Funding Rate Binance: ${marketData.fundingRate}%
-
-      Yêu cầu:
-      1. Phân tích tương quan ngắn hạn giữa BTC và Vàng hiện tại.
-      2. Đánh giá tâm lý thị trường dựa trên Funding Rate (Dương quá cao = Hưng phấn/FOMO, Âm = Sợ hãi).
-      3. Đưa ra 1 dự báo xu hướng ngắn hạn (Bullish/Bearish/Neutral).
-      
-      Hãy trả lời bằng Tiếng Việt, sử dụng icon cho sinh động. Định dạng Markdown.
-    `;
-
+  try {
     const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash',
       contents: prompt,
     });
-
     return response.text;
   } catch (error) {
     console.error("AI Analysis failed:", error);
-    return "Hệ thống AI đang bận hoặc gặp sự cố kết nối. Vui lòng thử lại sau.";
+    return "Analysis service unavailable.";
   }
 };
