@@ -10,7 +10,7 @@ import {
   Legend,
   Area
 } from 'recharts';
-import { ChartDataPoint, ChartMode, TimeFrame } from '../types';
+import { ChartDataPoint, ChartMode, TimeFrame } from '../types.ts';
 import { Maximize2, Layers, DollarSign } from 'lucide-react';
 
 interface MarketChartProps {

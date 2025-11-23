@@ -4,19 +4,19 @@ import {
   Clock, 
 } from 'lucide-react';
 
-// Import components
-import MarketChart from './components/MarketChart';
-import InfoPanel from './components/InfoPanel';
-import TickerCard from './components/TickerCard';
-import AIAnalysisPanel from './components/AIAnalysisPanel';
-import { TimeFrame, ChartMode, ChartDataPoint, FundingRate, HighLowData } from './types';
+// Import components with explicit extensions for browser compatibility
+import MarketChart from './components/MarketChart.tsx';
+import InfoPanel from './components/InfoPanel.tsx';
+import TickerCard from './components/TickerCard.tsx';
+import AIAnalysisPanel from './components/AIAnalysisPanel.tsx';
+import { TimeFrame, ChartMode, ChartDataPoint, FundingRate, HighLowData } from './types.ts';
 import { 
   fetchBTCPrice, 
   fetchGoldPrice, 
   fetchFundingRates, 
   fetchHighLow, 
   fetchChartData 
-} from './services/marketService';
+} from './services/marketService.ts';
 
 // -----------------------------------------------------------------------------
 // MAIN APP COMPONENT
@@ -88,7 +88,7 @@ function App() {
                     Market Intelligence
                 </h1>
                 <div className="flex items-center gap-2">
-                  <span className="text-[10px] bg-slate-800 text-slate-400 px-1.5 py-0.5 rounded border border-slate-700">V1.2.1</span>
+                  <span className="text-[10px] bg-slate-800 text-slate-400 px-1.5 py-0.5 rounded border border-slate-700">V1.2.2</span>
                   <p className="text-xs text-slate-500 font-medium tracking-wide uppercase">
                       Cross-Asset Quant Engine
                   </p>
