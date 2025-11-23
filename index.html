@@ -37,6 +37,20 @@
       ::-webkit-scrollbar-thumb:hover {
         background: #585b70; 
       }
+      
+      #error-display {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        background: #ef4444;
+        color: white;
+        padding: 10px;
+        z-index: 9999;
+        font-family: monospace;
+        font-size: 12px;
+      }
     </style>
   <script type="importmap">
 {
@@ -52,17 +66,31 @@
 }
 </script>
 <script>
-  // Polyfill process.env for browser environment to prevent crashes
+  // Error catcher to show why screen is blank
+  window.onerror = function(msg, url, line, col, error) {
+    var display = document.getElementById('error-display');
+    if(display) {
+      display.style.display = 'block';
+      display.innerHTML += "<div>Error: " + msg + " (Line: " + line + ")</div>";
+    }
+    return false;
+  };
+
+  // Polyfill process.env for browser
   window.process = {
     env: {
-      NODE_ENV: 'production'
+      NODE_ENV: 'production',
+      // NOTE: In a real build, this is replaced. 
+      // For GitHub Pages demo, the API key must be handled carefully.
+      // The App will warn if this is missing.
     }
   };
 </script>
 </head>
   <body>
+    <div id="error-display"></div>
     <div id="root"></div>
-    <!-- Change type to text/babel for browser compilation -->
+    <!-- Load the single combined file -->
     <script type="text/babel" data-type="module" data-presets="react,typescript" src="./index.tsx"></script>
   </body>
 </html>
