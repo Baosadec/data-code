@@ -17,7 +17,7 @@
         color: #cdd6f4;
         margin: 0;
         min-height: 100vh;
-        overflow-x: hidden; /* Prevent horizontal scroll */
+        overflow-x: hidden;
       }
       .font-mono {
         font-family: 'JetBrains Mono', monospace;
@@ -67,14 +67,14 @@
 }
 </script>
 <script>
-  // IMPORTANT: Polyfill process.env and INJECT USER API KEY
-  window.process = window.process || { 
+  // IMPORTANT: Robust Polyfill for process.env
+  window.process = { 
     env: {
       API_KEY: 'AIzaSyBkSrCmBaJK5ZPQpqCvZexTFZBfBbKyBK0'
     } 
   };
   
-  // Error catcher to show why screen is blank
+  // Error catcher
   window.onerror = function(msg, url, line, col, error) {
     var display = document.getElementById('error-display');
     if(display) {
@@ -88,7 +88,6 @@
   <body>
     <div id="error-display"></div>
     <div id="root"></div>
-    <!-- Load the single combined file -->
     <script type="text/babel" data-type="module" data-presets="react,typescript" src="./index.tsx"></script>
   </body>
 </html>
