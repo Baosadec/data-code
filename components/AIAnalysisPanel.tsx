@@ -9,7 +9,7 @@ import {
   Cpu 
 } from 'lucide-react';
 import { GoogleGenAI } from "@google/genai";
-import { HighLowData } from '../types';
+import { HighLowData } from '../types.ts';
 
 interface AIAnalysisPanelProps {
   btcPrice: number;

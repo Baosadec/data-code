@@ -73,6 +73,8 @@
       API_KEY: 'AIzaSyBkSrCmBaJK5ZPQpqCvZexTFZBfBbKyBK0'
     } 
   };
+  // Expose process globally for libraries that might reference it directly
+  var process = window.process;
   
   // Error catcher
   window.onerror = function(msg, url, line, col, error) {
@@ -81,6 +83,7 @@
       display.style.display = 'block';
       display.innerHTML += "<div>Error: " + msg + " (Line: " + line + ")</div>";
     }
+    console.error(msg, error);
     return false;
   };
 </script>
