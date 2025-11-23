@@ -1,5 +1,5 @@
 import React from 'react';
-import { HighLowData, FundingRate, ChartMode } from '../types.ts';
+import { HighLowData, FundingRate, ChartMode } from '../types';
 import { Zap, Activity, AlertTriangle, Info } from 'lucide-react';
 
 interface InfoPanelProps {

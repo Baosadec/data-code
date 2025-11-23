@@ -1,5 +1,5 @@
 import { GoogleGenAI } from "@google/genai";
-import { ChartDataPoint, FundingRate, HighLowData, TimeFrame } from '../types.ts';
+import { ChartDataPoint, FundingRate, HighLowData, TimeFrame } from '../types';
 
 // Constants
 const BINANCE_API = 'https://api.binance.com/api/v3';

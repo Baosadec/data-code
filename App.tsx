@@ -5,18 +5,18 @@ import {
 } from 'lucide-react';
 
 // Import components
-import MarketChart from './components/MarketChart.tsx';
-import InfoPanel from './components/InfoPanel.tsx';
-import TickerCard from './components/TickerCard.tsx';
-import AIAnalysisPanel from './components/AIAnalysisPanel.tsx';
-import { TimeFrame, ChartMode, ChartDataPoint, FundingRate, HighLowData } from './types.ts';
+import MarketChart from './components/MarketChart';
+import InfoPanel from './components/InfoPanel';
+import TickerCard from './components/TickerCard';
+import AIAnalysisPanel from './components/AIAnalysisPanel';
+import { TimeFrame, ChartMode, ChartDataPoint, FundingRate, HighLowData } from './types';
 import { 
   fetchBTCPrice, 
   fetchGoldPrice, 
   fetchFundingRates, 
   fetchHighLow, 
   fetchChartData 
-} from './services/marketService.ts';
+} from './services/marketService';
 
 // -----------------------------------------------------------------------------
 // MAIN APP COMPONENT
