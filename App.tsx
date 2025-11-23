@@ -16,16 +16,6 @@ import {
   Terminal,
   ShieldAlert
 } from 'lucide-react';
-import {
-  ResponsiveContainer,
-  ComposedChart,
-  Area,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend
-} from 'recharts';
 import { GoogleGenAI } from "@google/genai";
 
 // Import components with extensions for Babel Standalone
@@ -47,7 +37,7 @@ import {
 
 const runDeepLearningAnalysis = async (marketData: any) => {
   const apiKey = process.env.API_KEY;
-  if (!apiKey) return "⚠️ System Config Error: process.env.API_KEY missing.";
+  if (!apiKey) return null;
 
   try {
     const ai = new GoogleGenAI({ apiKey });
@@ -135,7 +125,12 @@ const AIAnalysisPanel: React.FC<AIAnalysisPanelProps> = ({
         fundingRate, 
         volatility
       });
-      setAnalysis(result || "AI Model returned no signal.");
+      
+      if (result === null) {
+        setAnalysis("⚠️ API KEY MISSING.\nPlease configure process.env.API_KEY in your environment.");
+      } else {
+        setAnalysis(result || "AI Model returned no signal.");
+      }
     } catch (e) {
       setAnalysis("Connection to Deep Learning Engine failed.");
     } finally {
@@ -144,12 +139,12 @@ const AIAnalysisPanel: React.FC<AIAnalysisPanelProps> = ({
   };
 
   return (
-    <div className="bg-slate-900 rounded-xl border border-indigo-500/30 p-1 relative overflow-hidden shadow-2xl group">
+    <div className="bg-slate-900 rounded-xl border border-indigo-500/30 p-1 relative overflow-hidden shadow-2xl group h-full min-h-[300px] flex flex-col">
       <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-600/10 rounded-full blur-3xl -z-0 group-hover:bg-indigo-600/20 transition-all duration-1000"></div>
       <div className="absolute bottom-0 left-0 w-64 h-64 bg-purple-600/10 rounded-full blur-3xl -z-0"></div>
       <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-indigo-500 to-transparent opacity-50"></div>
       
-      <div className="bg-slate-950/80 backdrop-blur-md rounded-lg p-5 h-full relative z-10 flex flex-col">
+      <div className="bg-slate-950/80 backdrop-blur-md rounded-lg p-5 h-full relative z-10 flex flex-col flex-grow">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-5 gap-4 border-b border-indigo-500/20 pb-4">
           <div className="flex items-center gap-3">
             <div className="bg-indigo-500/10 p-2.5 rounded-lg text-indigo-400 border border-indigo-500/30 shadow-[0_0_15px_rgba(99,102,241,0.15)] relative overflow-hidden">
@@ -167,8 +162,8 @@ const AIAnalysisPanel: React.FC<AIAnalysisPanelProps> = ({
           </div>
           <div className="flex items-center gap-2">
             {!process.env.API_KEY && (
-               <div className="text-xs text-red-400 flex items-center gap-1 mr-2 bg-red-900/20 px-2 py-1 rounded">
-                 <ShieldAlert size={12} /> Env Key Missing
+               <div className="hidden sm:flex text-xs text-red-400 items-center gap-1 mr-2 bg-red-900/20 px-2 py-1 rounded border border-red-900/50">
+                 <ShieldAlert size={12} /> No API Key
                </div>
             )}
             <button
@@ -185,17 +180,20 @@ const AIAnalysisPanel: React.FC<AIAnalysisPanelProps> = ({
           </div>
         </div>
 
-        <div className="flex-grow min-h-[140px] font-mono text-sm leading-relaxed text-slate-300 relative">
+        <div className="flex-grow font-mono text-sm leading-relaxed text-slate-300 relative overflow-hidden flex flex-col">
           {analysis ? (
-            <div className="animate-in fade-in slide-in-from-bottom-2 duration-500 h-full">
-               <div className="prose prose-invert prose-p:my-1 prose-headings:my-2 prose-strong:text-indigo-400 prose-strong:font-black max-w-none text-sm whitespace-pre-line border-l-2 border-indigo-500/30 pl-4 h-full overflow-auto custom-scrollbar">
+            <div className="animate-in fade-in slide-in-from-bottom-2 duration-500 h-full overflow-y-auto custom-scrollbar pr-2">
+               <div className="prose prose-invert prose-p:my-1 prose-headings:my-2 prose-strong:text-indigo-400 prose-strong:font-black max-w-none text-sm whitespace-pre-line border-l-2 border-indigo-500/30 pl-4">
                   {analysis}
                </div>
             </div>
           ) : (
-            <div className="h-[140px] flex flex-col items-center justify-center text-slate-600 border border-dashed border-slate-800 rounded-lg bg-slate-900/30">
+            <div className="h-full flex-grow flex flex-col items-center justify-center text-slate-600 border border-dashed border-slate-800 rounded-lg bg-slate-900/30 min-h-[200px]">
               <Cpu size={40} className="mb-3 opacity-20" />
               <p className="text-xs font-medium uppercase tracking-widest opacity-60">Ready to Initialize Neural Network</p>
+              {!process.env.API_KEY && (
+                <p className="text-[10px] text-red-400 mt-2 opacity-80">API Key Required to enable AI features</p>
+              )}
               <div className="flex gap-1 mt-2">
                  <span className="w-1.5 h-1.5 bg-indigo-500/50 rounded-full animate-bounce" style={{animationDelay: '0ms'}}></span>
                  <span className="w-1.5 h-1.5 bg-indigo-500/50 rounded-full animate-bounce" style={{animationDelay: '150ms'}}></span>
@@ -266,40 +264,46 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#1e1e2e] text-[#cdd6f4] p-4 md:p-6 lg:p-8 font-sans selection:bg-[#4ecdc4]/30">
+    <div className="min-h-screen bg-[#1e1e2e] text-[#cdd6f4] pb-8 font-sans selection:bg-[#4ecdc4]/30 w-full">
       
-      <div className="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
+      {/* Header */}
+      <div className="w-full flex flex-col sm:flex-row justify-between items-center mb-6 p-4 border-b border-slate-800 bg-[#1e1e2e]/90 backdrop-blur sticky top-0 z-50">
         <div className="flex items-center gap-3">
-            <div className="bg-[#4ecdc4] text-[#1e1e2e] font-black p-2 rounded text-xl shadow-[0_0_15px_rgba(78,205,196,0.5)]">
+            <div className="bg-gradient-to-br from-[#4ecdc4] to-teal-600 text-[#1e1e2e] font-black p-2.5 rounded-lg text-xl shadow-[0_0_15px_rgba(78,205,196,0.3)]">
                 TV
             </div>
             <div>
-                <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-400">
+                <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white via-slate-200 to-slate-400">
                     Market Intelligence
                 </h1>
-                <p className="text-xs text-slate-500 font-medium tracking-wide uppercase">
-                    Cross-Asset Correlation Engine
-                </p>
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] bg-slate-800 text-slate-400 px-1.5 py-0.5 rounded border border-slate-700">V1.2.0</span>
+                  <p className="text-xs text-slate-500 font-medium tracking-wide uppercase">
+                      Cross-Asset Quant Engine
+                  </p>
+                </div>
             </div>
         </div>
 
-        <div className="flex items-center gap-4 text-sm bg-slate-800/50 p-2 rounded-full border border-slate-700/50 px-4 backdrop-blur-md">
-            <div className="flex items-center gap-2 text-slate-400">
+        <div className="flex items-center gap-4 text-sm mt-4 sm:mt-0">
+            <div className="flex items-center gap-2 text-slate-400 bg-slate-900/50 px-3 py-1.5 rounded-full border border-slate-800">
                 <Clock size={14} />
-                <span>Cập nhật: <span className="text-white font-mono">{lastUpdated || '...'}</span></span>
+                <span>Updated: <span className="text-white font-mono">{lastUpdated || '...'}</span></span>
             </div>
             <button 
                 onClick={loadAllData} 
-                className={`p-1.5 rounded-full hover:bg-slate-700 transition-all ${loading ? 'animate-spin text-[#4ecdc4]' : 'text-slate-300'}`}
+                className={`p-2 rounded-full hover:bg-slate-800 bg-slate-900 border border-slate-800 transition-all ${loading ? 'animate-spin text-[#4ecdc4]' : 'text-slate-300 hover:text-white shadow-lg'}`}
                 title="Refresh Data"
             >
-                <RefreshCw size={16} />
+                <RefreshCw size={18} />
             </button>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto space-y-6">
+      {/* Main Content - Full Width */}
+      <div className="w-full px-4 space-y-4">
         
+        {/* Tickers */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <TickerCard 
             symbol="BTC/USDT" 
@@ -317,8 +321,11 @@ function App() {
           />
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2 space-y-6">
+        {/* Charts & Analysis Grid */}
+        <div className="grid grid-cols-1 xl:grid-cols-12 gap-4">
+          
+          {/* Left Column: Chart & AI (Takes 9/12 columns on large screens) */}
+          <div className="xl:col-span-9 flex flex-col gap-4">
             <MarketChart 
               data={chartData} 
               isLoading={loading}
@@ -333,19 +340,23 @@ function App() {
                 goldPrice={goldData.price}
                 goldChange={goldData.changePercent}
                 fundingRate={fundingData[0]?.rate * 100 || 0}
-                volatility={highLowBtc}
+                volatility={chartMode === 'gold' ? highLowGold : highLowBtc} 
              />
           </div>
-          <div className="lg:col-span-1">
+
+          {/* Right Column: Info Panel (Takes 3/12 columns on large screens) */}
+          <div className="xl:col-span-3 flex flex-col h-full">
             <InfoPanel 
-              highLow={highLowBtc} 
+              highLowBtc={highLowBtc}
+              highLowGold={highLowGold}
+              chartMode={chartMode}
               funding={fundingData} 
             />
           </div>
         </div>
         
-        <div className="text-center text-[10px] text-slate-600 mt-8 pb-4">
-          <p>QUANT ENGINE ALPHA V1.2 | POWERED BY GEMINI 2.5 FLASH</p>
+        <div className="text-center text-[10px] text-slate-600 mt-8 pb-4 border-t border-slate-800/50 pt-4">
+          <p>QUANT ENGINE ALPHA | POWERED BY GOOGLE GEMINI 2.5</p>
           <p>Disclaimer: This dashboard is for informational purposes only. Not financial advice.</p>
         </div>
       </div>

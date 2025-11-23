@@ -17,6 +17,7 @@
         color: #cdd6f4;
         margin: 0;
         min-height: 100vh;
+        overflow-x: hidden; /* Prevent horizontal scroll */
       }
       .font-mono {
         font-family: 'JetBrains Mono', monospace;
@@ -66,6 +67,13 @@
 }
 </script>
 <script>
+  // IMPORTANT: Polyfill process.env and INJECT USER API KEY
+  window.process = window.process || { 
+    env: {
+      API_KEY: 'AIzaSyBkSrCmBaJK5ZPQpqCvZexTFZBfBbKyBK0' // User provided key
+    } 
+  };
+  
   // Error catcher to show why screen is blank
   window.onerror = function(msg, url, line, col, error) {
     var display = document.getElementById('error-display');
@@ -74,16 +82,6 @@
       display.innerHTML += "<div>Error: " + msg + " (Line: " + line + ")</div>";
     }
     return false;
-  };
-
-  // Polyfill process.env for browser
-  window.process = {
-    env: {
-      NODE_ENV: 'production',
-      // NOTE: In a real build, this is replaced. 
-      // For GitHub Pages demo, the API key must be handled carefully.
-      // The App will warn if this is missing.
-    }
   };
 </script>
 </head>
