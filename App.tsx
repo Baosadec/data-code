@@ -15,7 +15,8 @@ import {
   Cpu,
   Crosshair,
   BrainCircuit,
-  Terminal
+  Terminal,
+  ShieldAlert
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -98,7 +99,6 @@ const fetchBTCPrice = async () => {
 };
 
 const fetchGoldPrice = async () => {
-  // Use PAXGUSDT (Paxos Gold) as a proxy for Real-Time Gold Price on Binance
   const data = await safeFetch(`${BINANCE_API}/ticker/24hr?symbol=PAXGUSDT`);
   if (!data) return { price: 2650, changePercent: 0 };
   return {
@@ -109,7 +109,7 @@ const fetchGoldPrice = async () => {
 
 const fetchFundingRates = async (): Promise<FundingRate[]> => {
   const binanceData = await safeFetch(`${BINANCE_F_API}/premiumIndex?symbol=BTCUSDT`);
-  const bybitRate = 0.01 + (Math.random() * 0.005); // Simulated fallback
+  const bybitRate = 0.01 + (Math.random() * 0.005); 
   return [
     {
       exchange: 'Binance',
@@ -122,13 +122,12 @@ const fetchFundingRates = async (): Promise<FundingRate[]> => {
   ];
 };
 
-// Now accepts a symbol to fetch High/Low for either BTC or Gold
 const fetchHighLow = async (symbol: string): Promise<HighLowData[]> => {
   const definitions = [
-    { label: '1 Giờ', interval: '1h', limit: 2 }, 
-    { label: '4 Giờ', interval: '4h', limit: 2 },
-    { label: '24 Giờ', interval: '1d', limit: 1 }, 
-    { label: '7 Ngày', interval: '1w', limit: 1 },
+    { label: '1H', interval: '1h', limit: 2 }, 
+    { label: '4H', interval: '4h', limit: 2 },
+    { label: '24H', interval: '1d', limit: 1 }, 
+    { label: '7D', interval: '1w', limit: 1 },
   ];
 
   const results = await Promise.all(definitions.map(async (def) => {
@@ -183,48 +182,61 @@ const fetchChartData = async (timeFrame: TimeFrame): Promise<ChartDataPoint[]> =
 };
 
 const fetchAIAnalysis = async (marketData: any) => {
+  // Safe environment check to prevent browser crash if process is undefined
+  let apiKey = '';
   try {
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    if (typeof process !== 'undefined' && process.env && process.env.API_KEY) {
+      apiKey = process.env.API_KEY;
+    }
+  } catch (e) {
+    console.error("Environment variable access error");
+  }
+
+  if (!apiKey) {
+    return "⚠️ API Key Missing. Please configure process.env.API_KEY in your build settings.";
+  }
+
+  try {
+    const ai = new GoogleGenAI({ apiKey });
     
-    // Convert volatility array to readable string
     const volatilityContext = marketData.volatility 
       ? marketData.volatility.map((v: any) => `${v.timeframe}: ${v.rangePercent.toFixed(2)}%`).join(', ')
       : "N/A";
 
-    // Optimized Prompt for Deep Learning Strategy
     const prompt = `
-      VAI TRÒ: Bạn là một hệ thống AI Trading Học Sâu (Deep Learning Quant Model) chuyên tối ưu hóa xác suất thắng.
-      NHIỆM VỤ: Phân tích dữ liệu vi mô để đưa ra chiến lược giao dịch BTC/USDT có XÁC SUẤT CAO NHẤT (High Probability Setup).
+      VAI TRÒ: Bạn là "Alpha-Zero", một AI Trading Quant cấp cao chuyên về Deep Learning & Market Microstructure.
+      NHIỆM VỤ: Quét dữ liệu thị trường và xuất ra KẾ HOẠCH GIAO DỊCH XÁC SUẤT CAO (High Win-Rate Setup).
 
-      DỮ LIỆU THỜI GIAN THỰC:
-      - Giá BTC: $${marketData.btcPrice} (24h: ${marketData.btcChange}%)
-      - Giá Vàng: $${marketData.goldPrice} (Tương quan Risk-On/Off)
-      - Funding Rate: ${marketData.fundingRate}% (Sentiment Proxy: >0.01% FOMO, <0 Fear)
-      - Biến động (Volatility): ${volatilityContext}
+      THÔNG SỐ THỊ TRƯỜNG:
+      - BTC Price: $${marketData.btcPrice} (Thay đổi 24h: ${marketData.btcChange}%)
+      - Gold Price: $${marketData.goldPrice} (Risk Sentiment: ${marketData.goldChange > 0 ? "Risk-Off" : "Risk-On"})
+      - Funding Rate: ${marketData.fundingRate}% (Sentiment Proxy)
+      - Volatility Profile: ${volatilityContext}
 
-      YÊU CẦU THUẬT TOÁN:
-      1. Tính toán "Xác suất thắng" (Win Rate) dựa trên Funding Rate và xu hướng hiện tại.
-      2. Tối ưu điểm vào lệnh (Entry) để tránh quét thanh khoản (Stop Hunt / Liquidity Sweep).
-      3. Xác định Market Structure: Tích lũy (Accumulation), Phân phối (Distribution) hay Xu hướng (Trend).
+      YÊU CẦU PHÂN TÍCH DEEP LEARNING:
+      1. **Liquidity Sweep**: Xác định các vùng giá có khả năng quét thanh khoản (Stop Hunt) trước khi đảo chiều.
+      2. **Funding Arbitrage**: Nếu Funding quá dương (>0.01%), ưu tiên Short Scalp hoặc chờ Long thấp hơn.
+      3. **Correlation**: Đánh giá dòng tiền giữa Crypto và Vàng.
 
-      ĐỊNH DẠNG OUTPUT (Bắt buộc Markdown Tiếng Việt):
+      ĐỊNH DẠNG OUTPUT (MARKDOWN):
       
-      ## 🧠 CHIẾN LƯỢC QUANT (ALPHA-ZERO)
+      ## 🧬 QUANT STRATEGY SIGNAL
       
-      **TÍN HIỆU**: [LONG 🟢 / SHORT 🔴 / CHỜ 🟡]
-      **XÁC SUẤT THẮNG**: [XX%]
-      
-      ### 📐 THIẾT LẬP TỐI ƯU (SETUP)
-      - **Vùng Vào Lệnh (Entry)**: $XXXXX - $XXXXX
-      - **Cắt Lỗ (Stop Loss)**: $XXXXX
-      - **Chốt Lời (Take Profit)**: 
-        1. $XXXXX (Scalp)
-        2. $XXXXX (Swing)
-      
-      ### 🔍 PHÂN TÍCH HỌC SÂU (LOGIC)
-      > [Giải thích ngắn gọn < 40 từ về lý do vào lệnh dựa trên Funding Rate và Volatility]
-      
-      GIỌNG VĂN: Chuyên nghiệp, ngắn gọn, thuật toán.
+      | Tín Hiệu | Xác Suất | Rủi Ro (R:R) |
+      | :---: | :---: | :---: |
+      | **[LONG/SHORT]** | **[XX]%** | **1:[X]** |
+
+      ### 🎯 PRECISION SETUP
+      * **Entry Zone (Vùng Vào)**: $XXXXX - $XXXXX
+      * **Invalidation (SL)**: $XXXXX (Tuyệt đối)
+      * **Targets (TP)**: 
+         1. $XXXXX (Scalp)
+         2. $XXXXX (Swing)
+
+      ### 🧠 NEURAL LOGIC
+      > [Phân tích ngắn gọn 1 câu về lý do vào lệnh dựa trên thanh khoản và Funding Rate]
+
+      *Lưu ý: Setup chỉ có hiệu lực trong phiên giao dịch hiện tại.*
     `;
 
     const response = await ai.models.generateContent({
@@ -235,7 +247,7 @@ const fetchAIAnalysis = async (marketData: any) => {
     return response.text;
   } catch (error) {
     console.error("AI Analysis failed:", error);
-    return "⚠️ Mất kết nối Neural Network. Đang thử lại...";
+    return "⚠️ Neural Network Connection Failed. Retrying...";
   }
 };
 
@@ -293,7 +305,6 @@ const InfoPanel: React.FC<InfoPanelProps> = ({ highLowBtc, highLowGold, funding,
 
   return (
     <div className="space-y-4">
-      {/* Dynamic Volatility Card */}
       <div className={`bg-slate-800/50 border ${isGoldMode ? 'border-[#ffd700]/20' : 'border-[#4ecdc4]/20'} rounded-xl p-4 transition-all duration-300`}>
         <div className={`flex items-center gap-2 mb-4 ${titleColor}`}>
           <Activity size={18} />
@@ -379,10 +390,6 @@ const AIAnalysisPanel: React.FC<AIAnalysisPanelProps> = ({
   const [isAnalyzing, setIsAnalyzing] = useState(false);
 
   const handleAnalyze = async () => {
-    if (!process.env.API_KEY) {
-      setAnalysis("⚠️ Error: API Key is missing.");
-      return;
-    }
     setIsAnalyzing(true);
     setAnalysis(""); 
     try {
@@ -392,7 +399,7 @@ const AIAnalysisPanel: React.FC<AIAnalysisPanelProps> = ({
         goldPrice, 
         goldChange, 
         fundingRate, 
-        volatility // Pass volatility data for deep learning simulation
+        volatility
       });
       setAnalysis(result || "AI Model returned no signal.");
     } catch (e) {
@@ -404,7 +411,6 @@ const AIAnalysisPanel: React.FC<AIAnalysisPanelProps> = ({
 
   return (
     <div className="bg-slate-900 rounded-xl border border-indigo-500/30 p-1 relative overflow-hidden shadow-2xl group">
-      {/* Decorative gradients and animations */}
       <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-600/10 rounded-full blur-3xl -z-0 group-hover:bg-indigo-600/20 transition-all duration-1000"></div>
       <div className="absolute bottom-0 left-0 w-64 h-64 bg-purple-600/10 rounded-full blur-3xl -z-0"></div>
       <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-indigo-500 to-transparent opacity-50"></div>
@@ -418,10 +424,10 @@ const AIAnalysisPanel: React.FC<AIAnalysisPanelProps> = ({
             </div>
             <div>
               <h2 className="text-lg font-bold text-white flex items-center gap-2">
-                Deep Learning Strategy <span className="text-[10px] bg-indigo-600 text-white px-1.5 py-0.5 rounded font-mono tracking-wide shadow-sm">ALPHA-ZERO</span>
+                Deep Learning Strategy <span className="text-[10px] bg-indigo-600 text-white px-1.5 py-0.5 rounded font-mono tracking-wide shadow-sm">QUANT-ENGINE</span>
               </h2>
               <p className="text-xs text-indigo-300/70 font-mono flex items-center gap-1">
-                <Terminal size={10} /> Optimized Probability Engine
+                <Terminal size={10} /> Optimized Probability & Liquidity Scans
               </p>
             </div>
           </div>
@@ -434,7 +440,7 @@ const AIAnalysisPanel: React.FC<AIAnalysisPanelProps> = ({
               : 'bg-indigo-600 hover:bg-indigo-500 text-white border-indigo-400 shadow-[0_0_20px_rgba(79,70,229,0.4)] hover:shadow-[0_0_30px_rgba(79,70,229,0.6)] active:scale-95'
             }`}
           >
-            {isAnalyzing ? <><RefreshCw size={14} className="animate-spin" /> Training Model...</> : <><Crosshair size={14} /> Generate Setup</>}
+            {isAnalyzing ? <><RefreshCw size={14} className="animate-spin" /> Computing...</> : <><Crosshair size={14} /> Scan Market</>}
           </button>
         </div>
 
@@ -448,7 +454,7 @@ const AIAnalysisPanel: React.FC<AIAnalysisPanelProps> = ({
           ) : (
             <div className="h-[140px] flex flex-col items-center justify-center text-slate-600 border border-dashed border-slate-800 rounded-lg bg-slate-900/30">
               <Cpu size={40} className="mb-3 opacity-20" />
-              <p className="text-xs font-medium uppercase tracking-widest opacity-60">Waiting for Market Data...</p>
+              <p className="text-xs font-medium uppercase tracking-widest opacity-60">Ready to Initialize Neural Network</p>
               <div className="flex gap-1 mt-2">
                  <span className="w-1.5 h-1.5 bg-indigo-500/50 rounded-full animate-bounce" style={{animationDelay: '0ms'}}></span>
                  <span className="w-1.5 h-1.5 bg-indigo-500/50 rounded-full animate-bounce" style={{animationDelay: '150ms'}}></span>
@@ -652,14 +658,10 @@ function App() {
   const [goldData, setGoldData] = useState({ price: 0, changePercent: 0 });
   const [chartData, setChartData] = useState<ChartDataPoint[]>([]);
   const [fundingData, setFundingData] = useState<FundingRate[]>([]);
-  
-  // Separate states for BTC and Gold High/Low Data
   const [highLowBtc, setHighLowBtc] = useState<HighLowData[]>([]);
   const [highLowGold, setHighLowGold] = useState<HighLowData[]>([]);
-  
   const [timeFrame, setTimeFrame] = useState<TimeFrame>(TimeFrame.H1);
   const [chartMode, setChartMode] = useState<ChartMode>('combined');
-
   const [loading, setLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState<string>('');
 
@@ -671,7 +673,7 @@ function App() {
         fetchGoldPrice(),
         fetchFundingRates(),
         fetchHighLow('BTCUSDT'),
-        fetchHighLow('PAXGUSDT'), // Fetch Gold Volatility
+        fetchHighLow('PAXGUSDT'),
         fetchChartData(timeFrame)
       ]);
 
@@ -765,7 +767,6 @@ function App() {
               chartMode={chartMode}
               onChartModeChange={setChartMode}
             />
-             {/* Integrated Deep Learning Panel */}
              <AIAnalysisPanel 
                 btcPrice={btcData.price}
                 btcChange={btcData.changePercent}
@@ -774,11 +775,6 @@ function App() {
                 fundingRate={fundingData[0]?.rate * 100 || 0}
                 volatility={highLowBtc}
              />
-            
-            <div className="mt-4 flex flex-wrap gap-4 text-[10px] text-slate-600 px-2">
-                <p>• Data sources: Binance (BTC), PAXG/USDT (Gold Proxy)</p>
-                <p>• AI Logic powered by Gemini 2.5 Flash</p>
-            </div>
           </div>
           <div className="lg:col-span-1">
             <InfoPanel 
@@ -788,6 +784,11 @@ function App() {
               chartMode={chartMode}
             />
           </div>
+        </div>
+        
+        <div className="text-center text-[10px] text-slate-600 mt-8 pb-4">
+          <p>QUANT ENGINE ALPHA V1.2 | POWERED BY GEMINI 2.5 FLASH</p>
+          <p>Disclaimer: This dashboard is for informational purposes only. Not financial advice.</p>
         </div>
       </div>
     </div>
